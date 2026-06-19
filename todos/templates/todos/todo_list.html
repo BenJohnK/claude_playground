@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #111111;
+            --border: #cccccc;
+            --border-light: #eeeeee;
+            --done-fg: #999999;
+            --input-bg: #ffffff;
+            --btn-bg: #eeeeee;
+            --btn-fg: #111111;
+        }
+        [data-theme="dark"] {
+            --bg: #1a1a1a;
+            --fg: #e8e8e8;
+            --border: #444444;
+            --border-light: #333333;
+            --done-fg: #666666;
+            --input-bg: #2a2a2a;
+            --btn-bg: #333333;
+            --btn-fg: #e8e8e8;
+        }
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: var(--bg); color: var(--fg); }
+        header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        h1 { margin: 0; }
+        #theme-toggle { background: var(--btn-bg); color: var(--btn-fg); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 0.9rem; cursor: pointer; }
+        form.add-form { display: flex; gap: 8px; margin-bottom: 24px; }
+        form.add-form input[type="text"] { flex: 1; padding: 8px; font-size: 1rem; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--fg); }
+        form.add-form button { padding: 8px 16px; font-size: 1rem; cursor: pointer; background: var(--btn-bg); color: var(--btn-fg); border: 1px solid var(--border); border-radius: 4px; }
+        ul { list-style: none; padding: 0; }
+        li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+        li span { flex: 1; }
+        li.done span { text-decoration: line-through; color: var(--done-fg); }
+        button.toggle { cursor: pointer; background: none; border: none; color: var(--fg); font-size: 1rem; }
+        button.delete { cursor: pointer; color: #c00; background: none; border: none; font-size: 1rem; }
+    </style>
+    <script>
+        (function () {
+            var saved = localStorage.getItem('theme');
+            var preferred = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', preferred);
+        })();
+    </script>
+</head>
+<body>
+    <header>
+        <h1>To-Do List</h1>
+        <button id="theme-toggle" aria-label="Toggle light/dark mode"></button>
+    </header>
+
+    <form class="add-form" method="post" action="{% url 'todo_create' %}">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="Add a new task..." autofocus required>
+        <button type="submit">Add</button>
+    </form>
+
+    {% if todos %}
+    <ul>
+        {% for todo in todos %}
+        <li class="{% if todo.completed %}done{% endif %}">
+            <form method="post" action="{% url 'todo_toggle' todo.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="toggle">
+                    {% if todo.completed %}☑{% else %}☐{% endif %}
+                </button>
+            </form>
+            <span>{{ todo.title }}</span>
+            <form method="post" action="{% url 'todo_delete' todo.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="delete" title="Delete">✕</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No tasks yet. Add one above!</p>
+    {% endif %}
+
+    <script>
+        var btn = document.getElementById('theme-toggle');
+        function updateLabel() {
+            var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+            btn.textContent = dark ? 'Light mode' : 'Dark mode';
+        }
+        updateLabel();
+        btn.addEventListener('click', function () {
+            var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateLabel();
+        });
+    </script>
+</body>
+</html>
